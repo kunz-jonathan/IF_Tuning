@@ -86,7 +86,7 @@ def main():
         pos_seq = []
         neg_seq = []
         for _, val in stage_df.iterrows():
-            if val["activity"] < max_act:
+            if val["activity"] <= max_act:
                 neg_seq.append((
                     val["sequence"],
                     val["pos"],
