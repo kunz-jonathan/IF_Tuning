@@ -142,6 +142,8 @@ def main():
         ],
     )
     base_df["PDB_ID"] = "pMT_pdb.pdb"
+    base_df = base_df[~base_df["pos_stage"].isin(['stage 9', 'stage 10'])]
+    base_df = base_df[~base_df["neg_stage"].isin(['stage 9', 'stage 10'])]
     base_df.to_csv(f"{INPUT_FOLDER}/pair_dataset.csv", index=False)
 
 if __name__ == "__main__":
