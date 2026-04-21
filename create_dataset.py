@@ -142,6 +142,7 @@ def main():
         ],
     )
     base_df["PDB_ID"] = "pMT_pdb.pdb"
+    base_df.to_csv(f"{INPUT_FOLDER}/pair_dataset.csv", index=False)
 
 if __name__ == "__main__":
     main()
