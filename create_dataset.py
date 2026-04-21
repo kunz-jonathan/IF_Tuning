@@ -70,6 +70,8 @@ def main():
             ].values.tolist()
         )
 
+    data = [item for sublist in data for item in sublist] # unzip it 
+
     ### ACROSS STAGES PAIRS ###
     neg_seq_per_stage = {}
     pos_seq_per_stage = {}
@@ -83,7 +85,7 @@ def main():
         max_act = max(stage_df["activity"])
         pos_seq = []
         neg_seq = []
-        for row, val in stage_df.iterrows():
+        for _, val in stage_df.iterrows():
             if val["activity"] < max_act:
                 neg_seq.append((
                     val["sequence"],
@@ -140,3 +142,6 @@ def main():
         ],
     )
     base_df["PDB_ID"] = "pMT_pdb.pdb"
+
+if __name__ == "__main__":
+    main()
