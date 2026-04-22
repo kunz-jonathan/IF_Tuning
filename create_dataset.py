@@ -2,11 +2,11 @@ import numpy as np
 import pandas as pd
 
 INPUT_FOLDER = "/home/jkunz/master_uni_hd/internship_singapore/IF_Tuning"
-
+MINIMUM_DISTANCE = 0.2
 
 def pMT_data_preparation():
     """
-    - create from .csv file a dict of id - seq
+    creates stage-column and cleans the dataset
 
     """
     seq_csv = pd.read_csv(f"{INPUT_FOLDER}/ptm_sequences.csv")
@@ -42,17 +42,17 @@ def pMT_data_preparation():
 
 def main():
     seq_csv = pMT_data_preparation()
-
+    stages = seq_csv["stage"].unique()
+    stages = stages[stages != "stage 1"]
     data = []
+
     ### EACH STAGE PAIRS ###
-    for stage in seq_csv["stage"].unique():
-        if stage == "stage 1":
-            continue
+    for stage in stages:
         stage_df = seq_csv[seq_csv["stage"] == stage]
         pairs = stage_df.merge(stage_df, how="cross", suffixes=("_1", "_2"))
 
         mask = (pairs["pos_1"] != pairs["pos_2"]) & (
-            pairs["activity_1"] > pairs["activity_2"]
+            pairs["activity_1"] - pairs["activity_2"] >= MINIMUM_DISTANCE
         )
         result_df = pairs[mask]
         data.append(
@@ -70,29 +70,27 @@ def main():
             ].values.tolist()
         )
 
-    data = [item for sublist in data for item in sublist] # unzip it 
+    data = [item for sublist in data for item in sublist]  # unzip it
 
     ### ACROSS STAGES PAIRS ###
     neg_seq_per_stage = {}
     pos_seq_per_stage = {}
     # first we construct the neg. and pos. sequences for each stage
-    stages = seq_csv["stage"].unique()
-    stages = stages[stages != "stage 1"]
     for stage in stages:
-        if stage == "stage 1":
-            continue
         stage_df = seq_csv[seq_csv["stage"] == stage]
         max_act = max(stage_df["activity"])
         pos_seq = []
         neg_seq = []
         for _, val in stage_df.iterrows():
-            if val["activity"] <= max_act:
+            # in lower stages we consider all sequences as negative sequences, except the new reference sequence
+            if val["activity"] < max_act:
                 neg_seq.append((
                     val["sequence"],
                     val["pos"],
                     val["mut"],
                     val["activity"],
                 ))
+            # in higher stages we consider all stages that have a higher activity than the reference sequence
             if val["activity"] > 1:
                 pos_seq.append((
                     val["sequence"],
@@ -107,7 +105,7 @@ def main():
     # due to the definition of the activity with the reference sequence,
     # we can be sure that the pos. sequences have higher activity than the neg. sequences
     for id, stage in enumerate(stages):
-        if stage == "stage 1" or stage == "stage 2":
+        if stage == "stage 2":
             continue
         lower_stages = stages[:id]
         for lower_stage in lower_stages:
@@ -126,6 +124,7 @@ def main():
                         neg_seq[3],
                     ))
 
+    ### DATASET CREATION ###
     base_df = pd.DataFrame(
         data,
         columns=[
@@ -141,10 +140,13 @@ def main():
             "neg_act",
         ],
     )
+
     base_df["PDB_ID"] = "pMT_pdb.pdb"
-    base_df = base_df[~base_df["pos_stage"].isin(['stage 9', 'stage 10'])]
-    base_df = base_df[~base_df["neg_stage"].isin(['stage 9', 'stage 10'])]
+    base_df = base_df[~base_df["pos_stage"].isin(["stage 10"])]
+    base_df = base_df[~base_df["neg_stage"].isin(["stage 10"])]
+
     base_df.to_csv(f"{INPUT_FOLDER}/pair_dataset.csv", index=False)
+
 
 if __name__ == "__main__":
     main()
