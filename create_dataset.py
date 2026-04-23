@@ -83,7 +83,7 @@ def main():
         neg_seq = []
         for _, val in stage_df.iterrows():
             # in lower stages we consider all sequences as negative sequences, except the new reference sequence
-            if val["activity"] < max_act:
+            if val["activity"] <= max_act:
                 neg_seq.append((
                     val["sequence"],
                     val["pos"],
